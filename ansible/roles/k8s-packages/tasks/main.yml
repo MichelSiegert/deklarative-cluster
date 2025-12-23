@@ -1,0 +1,50 @@
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes Release.key
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key
+    dest: /tmp/kubernetes-release.key
+    mode: '0644'
+
+- name: Convert Kubernetes Release.key to GPG keyring
+  command: gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Ensure permissions on Kubernetes keyring
+  file:
+    path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    mode: '0644'
+
+- name: Add Kubernetes apt repository
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /"
+    state: present
+    filename: kubernetes
+
+- name: Install Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: Hold Kubernetes packages
+  command: apt-mark hold kubelet kubeadm kubectl
+
+- name: Enable kubelet
+  systemd:
+    name: kubelet
+    enabled: yes

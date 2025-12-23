@@ -1,0 +1,69 @@
+- name: Configure containerd registry mirror for HTTP registry
+  ansible.builtin.blockinfile:
+    path: /etc/containerd/config.toml
+    block: |
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ local_registry }}"]
+        endpoint = ["http://{{ local_registry }}"]
+
+      [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ local_registry }}".tls]
+        insecure_skip_verify = true
+    insertafter: '^\[plugins\]'
+    create: yes
+    backup: yes
+
+- name: Reload systemd
+  ansible.builtin.command: systemctl daemon-reload
+  changed_when: false
+
+- name: Restart containerd
+  ansible.builtin.service:
+    name: containerd
+    state: restarted
+
+- name: Persist repo environment variable
+  ansible.builtin.lineinfile:
+    path: "/home/michelsiegert/.bashrc"
+    line: "export repo={{ local_registry }}"
+    create: yes
+    state: present
+
+- name: Create registries.conf.d directory
+  ansible.builtin.file:
+    path: /etc/containers/registries.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Configure container registry
+  ansible.builtin.copy:
+    dest: /etc/containers/registries.conf.d/registry.conf
+    content: |
+      [[registry]]
+      location = "{{ local_registry }}"
+      insecure = true
+    mode: '0644'
+
+- name: Generate default containerd config
+  ansible.builtin.command: containerd config default
+  register: containerd_config
+  changed_when: false
+
+- name: Write containerd config.toml
+  ansible.builtin.copy:
+    dest: /etc/containerd/config.toml
+    content: "{{ containerd_config.stdout }}"
+    mode: '0644'
+
+- name: Enable SystemdCgroup in containerd config
+  ansible.builtin.replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+
+
+- name: Reboot the node if needed
+  ansible.builtin.reboot:
+    reboot_timeout: 600
+    pre_reboot_delay: 5
+    post_reboot_delay: 10
+    test_command: whoami
+  

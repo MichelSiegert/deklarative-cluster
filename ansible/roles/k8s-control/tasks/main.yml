@@ -1,0 +1,37 @@
+- name: Initialize control plane
+  command: >
+    kubeadm init
+    --pod-network-cidr=10.244.0.0/16
+    --cri-socket=unix:///run/containerd/containerd.sock
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Wait for API server
+  wait_for:
+    port: 6443
+    timeout: 60
+
+- name: Create kubeconfig directory
+  file:
+    path: /home/{{ ansible_user }}/.kube
+    state: directory
+    owner: "{{ ansible_user }}"
+    mode: 0700
+
+- name: Copy admin kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/{{ ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    mode: 0600
+    remote_src: yes
+
+- name: Install Flannel
+  command: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Get join command
+  command: kubeadm token create --print-join-command
+  register: join_command
+  changed_when: false

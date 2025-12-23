@@ -1,0 +1,32 @@
+- name: Add containerd registry mirror
+  blockinfile:
+    path: /etc/containerd/config.toml
+    marker: "# {mark} ANSIBLE MANAGED BLOCK FOR CUSTOM MIRRORS"
+    insertafter: '^\[plugins."io.containerd.grpc.v1.cri".registry.mirrors\]'
+    block: |
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."10.97.40.62:5000"]
+        endpoint = ["http://10.97.40.62:5000"]
+
+- name: Ensure containerd certs.d directory exists
+  file:
+    path: "/etc/containerd/certs.d/{{ local_registry }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure containerd insecure registry
+  copy:
+    dest: "/etc/containerd/certs.d/{{ local_registry }}/hosts.toml"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      server = "http://{{ local_registry }}"
+      
+      [host."http://{{ local_registry }}"]
+        capabilities = ["pull", "resolve"]
+        skip_verify = true
+  notify:
+    - Restart containerd
+    - Restart kubelet

@@ -1,0 +1,13 @@
+- name: Copy easyregistry.yaml to user's home directory
+  ansible.builtin.copy:
+    src: easyregistry.yaml
+    dest: /home/{{ ansible_user }}/easyregistry.yaml
+    mode: '0644'
+
+- name: Apply easyregistry.yaml with kubectl
+  ansible.builtin.command:
+    cmd: kubectl apply -f /home/{{ ansible_user }}/easyregistry.yaml
+  become: true        
+  environment:
+    KUBECONFIG: /home/{{ ansible_user }}/.kube/config
+  

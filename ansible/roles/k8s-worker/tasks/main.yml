@@ -1,0 +1,4 @@
+- name: Join cluster
+  command: "{{ hostvars[groups['k8s_control'][0]].join_command.stdout }} --cri-socket=unix:///run/containerd/containerd.sock"
+  args:
+    creates: /etc/kubernetes/kubelet.conf

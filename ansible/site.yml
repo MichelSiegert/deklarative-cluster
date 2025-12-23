@@ -1,0 +1,33 @@
+- hosts: k8s
+  become: true
+  roles:
+    - k8s-prerequisites
+    - containerd-setup
+    - k8s-packages
+
+- hosts: k8s_control
+  become: true
+  roles:
+    - k8s-control
+
+- hosts: k8s_workers
+  become: true
+  roles:
+    - k8s-worker
+
+- hosts: k8s_control
+  become: true
+  roles: 
+    - repo-init
+    - lfs-control
+
+- hosts: k8s
+  become: true
+  roles:
+    - k8s-repo
+
+- hosts: k8s_workers
+  become: true
+  roles:
+    - insecure_repo
+    - lfs-worker

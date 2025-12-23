@@ -1,0 +1,17 @@
+- name: Install a list of packages
+  ansible.builtin.apt:
+    pkg:
+    - nfs-common
+    - nfs-kernel-server
+  
+- name: Ensure mount point exists
+  ansible.builtin.file:
+    path: /mnt
+    state: directory
+
+- name: Mount cp:/opt/sfw on /mnt
+  ansible.builtin.mount:
+    src: k8s-control-plane:/opt/sfw
+    path: /mnt
+    fstype: nfs
+    state: mounted
