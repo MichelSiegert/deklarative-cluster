@@ -6,3 +6,4 @@ graph.*
 *.pdf
 .ansible
 keys/
+*.ini
