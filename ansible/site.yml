@@ -20,6 +20,7 @@
   roles: 
     - repo-init
     - lfs-control
+    - k8s-autocomplete
 
 - hosts: k8s
   become: true

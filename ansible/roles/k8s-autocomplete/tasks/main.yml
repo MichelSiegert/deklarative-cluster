@@ -1,0 +1,9 @@
+- name: Install the package bash-completion
+  ansible.builtin.apt:
+    name: bash-completion
+
+- name: Enable kubectl bash completion
+  ansible.builtin.lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: 'source <(kubectl completion bash)'
+    state: present

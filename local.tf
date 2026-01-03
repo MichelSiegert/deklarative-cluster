@@ -1,5 +1,5 @@
 resource "local_file" "ansible_inventory" {
-  depends_on = [google_compute_instance.worker_nodes , google_compute_instance.control_plane_node]
+  depends_on = [google_compute_instance.worker_nodes, google_compute_instance.control_plane_node]
   filename   = "${path.module}/inventory.ini"
 
   content = templatefile("${path.module}/inventory.tpl", {
